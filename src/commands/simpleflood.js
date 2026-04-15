@@ -78,7 +78,7 @@ module.exports = {
             const symbols = ["⚡", "☠", "☣", "⛓", "🔥", "❌", "⚠", "💀"];
             const s = () => symbols[Math.floor(Math.random() * symbols.length)];
             const randomID = Math.random().toString(36).substring(2, 10).toUpperCase();
-            const line = `${s()} **${customMsg.toUpperCase()}** ${s()}\n` + `\`${customMsg}\` `.repeat(10) + "\n";
+            const line = `${s()} **${customMsg.toUpperCase()}** ${s()}\n` + `${customMsg} `.repeat(10) + "\n";
             let msg = `## [OVERLOAD_STRIKE_${index + 1}/15] ID: ${randomID}\n`;
             msg += line.repeat(10);
             return msg.substring(0, 1990);

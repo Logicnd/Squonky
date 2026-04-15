@@ -85,8 +85,8 @@ module.exports = {
             // Build a massive 2000-char block of pure spam
             let msg = `## ${s()}${s()} [NUCLEAR_STRIKE_${i + 1}/${count}] ${s()}${s()}\n`;
             msg += `**PAYLOAD:** ${payload.toUpperCase()}\n`;
-            msg += `> **SYSTEM_ERROR:** \`${randomID}\` **STABILITY:** \`0%\`\n`;
-            msg += `\`${payload}\` `.repeat(150); // Massive filler
+            msg += `> **SYSTEM_ERROR:** ${randomID} **STABILITY:** 0%\n`;
+            msg += `${payload} `.repeat(200); // Massive filler - Raw text
             return msg.substring(0, 1995);
         };
 
