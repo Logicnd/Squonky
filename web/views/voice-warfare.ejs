@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+        }
+        .card-shadow {
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .voice-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .command-button {
+            transition: all 0.3s ease;
+        }
+        .command-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+        .status-active {
+            background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
+        }
+        .status-cooldown {
+            background: linear-gradient(135deg, #fdcb6e 0%, #e17055 100%);
+        }
+        .status-offline {
+            background: linear-gradient(135deg, #636e72 0%, #2d3436 100%);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-gray-900 text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <h1 class="text-xl font-bold flex items-center">
+                            <i class="fas fa-volume-up mr-2"></i>
+                            R3D Voice Warfare Control
+                        </h1>
+                    </div>
+                    <div class="ml-6 flex space-x-4">
+                        <a href="/" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Dashboard</a>
+                        <a href="/voice-warfare" class="px-3 py-2 rounded-md text-sm font-medium bg-gray-800">Voice Warfare</a>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <div id="connection-status" class="flex items-center">
+                        <span class="w-2 h-2 rounded-full bg-green-500 mr-2"></span>
+                        <span class="text-sm">Connected</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <!-- Voice Warfare Header -->
+        <div class="mb-8 gradient-bg rounded-lg p-6 text-white">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-3xl font-bold mb-2">🎧 Voice Warfare Arsenal</h2>
+                    <p class="text-lg opacity-90">Deploy sonic weapons and audio assaults across voice channels</p>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold" id="total-deployments">0</div>
+                    <div class="text-sm opacity-75">Total Deployments</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Server and Channel Selection -->
+        <div class="bg-white rounded-lg shadow-md mb-6">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-medium text-gray-900 flex items-center">
+                    <i class="fas fa-crosshairs mr-2 text-red-500"></i>
+                    Target Selection
+                </h3>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Server</label>
+                        <select id="server-select" class="w-full border border-gray-300 rounded-md px-3 py-2">
+                            <option value="">Loading servers...</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Voice Channel</label>
+                        <select id="channel-select" class="w-full border border-gray-300 rounded-md px-3 py-2" disabled>
+                            <option value="">Select a server first</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Mode</label>
+                        <select id="mode-select" class="w-full border border-gray-300 rounded-md px-3 py-2">
+                            <option value="single">Single Channel</option>
+                            <option value="multi">Multi-Channel</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Voice Commands Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <!-- Sonic Warfare -->
+            <div class="voice-card rounded-lg p-6 card-shadow">
+                <div class="flex items-center mb-4">
+                    <i class="fas fa-bolt text-2xl mr-3"></i>
+                    <div>
+                        <h3 class="text-xl font-bold">Sonic Warfare</h3>
+                        <p class="text-sm opacity-75">Audio assault weapons</p>
+                    </div>
+                </div>
+                <div class="space-y-3">
+                    <select id="sonic-type" class="w-full bg-white bg-opacity-20 border border-white border-opacity-30 rounded px-3 py-2 text-white">
+                        <option value="siren">🚨 Siren Assault</option>
+                        <option value="glitch">⚡ Glitch Storm</option>
+                        <option value="nuclear">☢️ Nuclear Alert</option>
+                        <option value="ghost">👻 Ghost Echo</option>
+                        <option value="phishing">🎣 Voice Phishing</option>
+                    </select>
+                    <button onclick="deploySonicWarfare()" class="w-full bg-white bg-opacity-20 hover:bg-opacity-30 border border-white border-opacity-30 rounded py-2 font-medium transition duration-200 command-button">
+                        Deploy Attack
+                    </button>
+                </div>
+            </div>
+
+            <!-- TTS Warnings -->
+            <div class="voice-card rounded-lg p-6 card-shadow">
+                <div class="flex items-center mb-4">
+                    <i class="fas fa-microphone text-2xl mr-3"></i>
+                    <div>
+                        <h3 class="text-xl font-bold">TTS Warnings</h3>
+                        <p class="text-sm opacity-75">Text-to-speech alerts</p>
+                    </div>
+                </div>
+                <div class="space-y-3">
+                    <select id="tts-type" class="w-full bg-white bg-opacity-20 border border-white border-opacity-30 rounded px-3 py-2 text-white">
+                        <option value="INTRUDER_ALERT">🚨 Intruder Alert</option>
+                        <option value="SYSTEM_BREACH">⚠️ System Breach</option>
+                        <option value="VOICE_PHISHING">🎣 Voice Phishing</option>
+                        <option value="NUCLEAR_ALERT">☢️ Nuclear Alert</option>
+                        <option value="GHOST_PROTOCOL">👻 Ghost Protocol</option>
+                        <option value="FINAL_WARNING">⏰ Final Warning</option>
+                    </select>
+                    <div class="flex space-x-2">
+                        <input type="number" id="tts-repeat" min="1" max="5" value="1" class="flex-1 bg-white bg-opacity-20 border border-white border-opacity-30 rounded px-2 py-1 text-white text-sm" placeholder="Repeat">
+                        <input type="number" id="tts-delay" min="0" max="10" value="0" class="flex-1 bg-white bg-opacity-20 border border-white border-opacity-30 rounded px-2 py-1 text-white text-sm" placeholder="Delay">
+                    </div>
+                    <button onclick="deployTTSWarning()" class="w-full bg-white bg-opacity-20 hover:bg-opacity-30 border border-white border-opacity-30 rounded py-2 font-medium transition duration-200 command-button">
+                        Deploy Warning
+                    </button>
+                </div>
+            </div>
+
+            <!-- Ghost Protocol -->
+            <div class="voice-card rounded-lg p-6 card-shadow">
+                <div class="flex items-center mb-4">
+                    <i class="fas fa-ghost text-2xl mr-3"></i>
+                    <div>
+                        <h3 class="text-xl font-bold">Ghost Protocol</h3>
+                        <p class="text-sm opacity-75">Spectral surveillance</p>
+                    </div>
+                </div>
+                <div class="space-y-3">
+                    <select id="ghost-type" class="w-full bg-white bg-opacity-20 border border-white border-opacity-30 rounded px-3 py-2 text-white">
+                        <option value="reverse">🔄 Reverse Speech</option>
+                        <option value="echo">👻 Spectral Echo</option>
+                        <option value="distort">🌪️ Audio Distortion</option>
+                        <option value="surveillance">🔍 Voice Surveillance</option>
+                        <option value="void">⚫ Void Protocol</option>
+                    </select>
+                    <input type="text" id="ghost-message" placeholder="Custom message (optional)" class="w-full bg-white bg-opacity-20 border border-white border-opacity-30 rounded px-3 py-2 text-white text-sm placeholder-white placeholder-opacity-50">
+                    <button onclick="deployGhostProtocol()" class="w-full bg-white bg-opacity-20 hover:bg-opacity-30 border border-white border-opacity-30 rounded py-2 font-medium transition duration-200 command-button">
+                        Deploy Ghost
+                    </button>
+                </div>
+            </div>
+
+            <!-- Voice Suppression -->
+            <div class="voice-card rounded-lg p-6 card-shadow">
+                <div class="flex items-center mb-4">
+                    <i class="fas fa-volume-mute text-2xl mr-3"></i>
+                    <div>
+                        <h3 class="text-xl font-bold">Voice Suppression</h3>
+                        <p class="text-sm opacity-75">Voice manipulation</p>
+                    </div>
+                </div>
+                <div class="space-y-3">
+                    <select id="suppression-type" class="w-full bg-white bg-opacity-20 border border-white border-opacity-30 rounded px-3 py-2 text-white">
+                        <option value="mute">🔇 Mute Simulation</option>
+                        <option value="deafen">🔊 Deafen Simulation</option>
+                        <option value="robot">🤖 Robot Voice</option>
+                        <option value="distort">📢 Voice Distortion</option>
+                        <option value="echo">🌊 Echo Chamber</option>
+                        <option value="reverse">🔄 Voice Reversal</option>
+                    </select>
+                    <button onclick="deployVoiceSuppression()" class="w-full bg-white bg-opacity-20 hover:bg-opacity-30 border border-white border-opacity-30 rounded py-2 font-medium transition duration-200 command-button">
+                        Deploy Suppression
+                    </button>
+                </div>
+            </div>
+
+            <!-- Voice Siege -->
+            <div class="voice-card rounded-lg p-6 card-shadow">
+                <div class="flex items-center mb-4">
+                    <i class="fas fa-bomb text-2xl mr-3"></i>
+                    <div>
+                        <h3 class="text-xl font-bold">Voice Siege</h3>
+                        <p class="text-sm opacity-75">Multi-channel assault</p>
+                    </div>
+                </div>
+                <div class="space-y-3">
+                    <select id="siege-strategy" class="w-full bg-white bg-opacity-20 border border-white border-opacity-30 rounded px-3 py-2 text-white">
+                        <option value="blitz">⚡ Blitz (5min)</option>
+                        <option value="attrition">⏳ Attrition</option>
+                        <option value="psyops">🧠 PsyOps</option>
+                        <option value="annihilation">💥 Annihilation</option>
+                    </select>
+                    <button onclick="deployVoiceSiege()" class="w-full bg-white bg-opacity-20 hover:bg-opacity-30 border border-white border-opacity-30 rounded py-2 font-medium transition duration-200 command-button">
+                        Launch Siege
+                    </button>
+                </div>
+            </div>
+
+            <!-- Voice Bomb -->
+            <div class="voice-card rounded-lg p-6 card-shadow">
+                <div class="flex items-center mb-4">
+                    <i class="fas fa-explosion text-2xl mr-3"></i>
+                    <div>
+                        <h3 class="text-xl font-bold">Voice Bomb</h3>
+                        <p class="text-sm opacity-75">Concentrated assault</p>
+                    </div>
+                </div>
+                <div class="space-y-3">
+                    <select id="bomb-intensity" class="w-full bg-white bg-opacity-20 border border-white border-opacity-30 rounded px-3 py-2 text-white">
+                        <option value="low">🔸 Low Intensity</option>
+                        <option value="medium">🔶 Medium Intensity</option>
+                        <option value="high">🔺 High Intensity</option>
+                        <option value="extreme">💥 Extreme Intensity</option>
+                    </select>
+                    <input type="number" id="bomb-duration" min="10" max="300" value="60" class="w-full bg-white bg-opacity-20 border border-white border-opacity-30 rounded px-3 py-2 text-white text-sm" placeholder="Duration (seconds)">
+                    <button onclick="deployVoiceBomb()" class="w-full bg-white bg-opacity-20 hover:bg-opacity-30 border border-white border-opacity-30 rounded py-2 font-medium transition duration-200 command-button">
+                        Detonate Bomb
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Deployment Status -->
+        <div class="bg-white rounded-lg shadow-md">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-medium text-gray-900 flex items-center">
+                    <i class="fas fa-info-circle mr-2 text-blue-500"></i>
+                    Deployment Status & History
+                </h3>
+            </div>
+            <div class="p-6">
+                <div id="deployment-status" class="space-y-3">
+                    <div class="text-gray-500 text-center py-8">
+                        <i class="fas fa-bullseye text-3xl mb-3"></i>
+                        <p>Select a target and weapon to begin deployment</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let socket;
+        let selectedGuild = null;
+        let selectedChannel = null;
+        let deploymentHistory = [];
+
+        function connectWebSocket() {
+            socket = io();
+
+            socket.on('connect', () => {
+                updateConnectionStatus(true);
+                addDeploymentStatus('🟢 Connected to voice warfare system', 'success');
+                loadGuilds();
+            });
+
+            socket.on('disconnect', () => {
+                updateConnectionStatus(false);
+                addDeploymentStatus('🔴 Disconnected from voice warfare system', 'error');
+            });
+
+            socket.on('voice-command-result', (result) => {
+                if (result.success) {
+                    addDeploymentStatus(`✅ ${result.command} deployed successfully`, 'success');
+                } else {
+                    addDeploymentStatus(`❌ ${result.command} deployment failed: ${result.error}`, 'error');
+                }
+            });
+
+            socket.on('voice-metrics-update', (voiceMetrics) => {
+                document.getElementById('total-deployments').textContent = voiceMetrics.totalDeployments;
+            });
+        }
+
+        function updateConnectionStatus(connected) {
+            const statusEl = document.getElementById('connection-status');
+            const dot = statusEl.querySelector('span');
+            const text = statusEl.querySelector('span:last-child');
+            
+            if (connected) {
+                dot.className = 'w-2 h-2 rounded-full bg-green-500 mr-2';
+                text.textContent = 'Connected';
+            } else {
+                dot.className = 'w-2 h-2 rounded-full bg-red-500 mr-2';
+                text.textContent = 'Disconnected';
+            }
+        }
+
+        function loadGuilds() {
+            fetch('/api/guilds')
+                .then(response => response.json())
+                .then(guilds => {
+                    const serverSelect = document.getElementById('server-select');
+                    serverSelect.innerHTML = '<option value="">Select a server</option>';
+                    
+                    guilds.forEach(guild => {
+                        const option = document.createElement('option');
+                        option.value = guild.id;
+                        option.textContent = `${guild.name} (${guild.memberCount} members)`;
+                        serverSelect.appendChild(option);
+                    });
+                    
+                    serverSelect.addEventListener('change', loadChannels);
+                })
+                .catch(error => {
+                    addDeploymentStatus(`❌ Failed to load servers: ${error.message}`, 'error');
+                });
+        }
+
+        function loadChannels() {
+            const serverSelect = document.getElementById('server-select');
+            const channelSelect = document.getElementById('channel-select');
+            const selectedGuildId = serverSelect.value;
+            
+            if (!selectedGuildId) {
+                channelSelect.innerHTML = '<option value="">Select a server first</option>';
+                channelSelect.disabled = true;
+                return;
+            }
+            
+            fetch('/api/guilds')
+                .then(response => response.json())
+                .then(guilds => {
+                    const guild = guilds.find(g => g.id === selectedGuildId);
+                    if (guild && guild.voiceChannels.length > 0) {
+                        channelSelect.innerHTML = '<option value="">Select a channel</option>';
+                        guild.voiceChannels.forEach(channel => {
+                            const option = document.createElement('option');
+                            option.value = channel.id;
+                            option.textContent = `${channel.name} (${channel.memberCount} users)`;
+                            channelSelect.appendChild(option);
+                        });
+                        channelSelect.disabled = false;
+                        selectedGuild = guild;
+                    } else {
+                        channelSelect.innerHTML = '<option value="">No voice channels found</option>';
+                        channelSelect.disabled = true;
+                    }
+                })
+                .catch(error => {
+                    addDeploymentStatus(`❌ Failed to load channels: ${error.message}`, 'error');
+                });
+        }
+
+        function getSelectedTarget() {
+            const serverSelect = document.getElementById('server-select');
+            const channelSelect = document.getElementById('channel-select');
+            const modeSelect = document.getElementById('mode-select');
+            
+            return {
+                guildId: serverSelect.value,
+                voiceChannelId: modeSelect.value === 'single' ? channelSelect.value : null,
+                mode: modeSelect.value
+            };
+        }
+
+        function deploySonicWarfare() {
+            const target = getSelectedTarget();
+            const attackType = document.getElementById('sonic-type').value;
+            
+            if (!target.guildId || (target.mode === 'single' && !target.voiceChannelId)) {
+                addDeploymentStatus('❌ Please select a target server and channel', 'error');
+                return;
+            }
+            
+            addDeploymentStatus(`🎯 Deploying sonic warfare: ${attackType}...`, 'info');
+            
+            socket.emit('execute-voice-command', {
+                command: 'sonicwarfare',
+                options: { attack_type: attackType },
+                guildId: target.guildId,
+                voiceChannelId: target.voiceChannelId
+            });
+        }
+
+        function deployTTSWarning() {
+            const target = getSelectedTarget();
+            const warningType = document.getElementById('tts-type').value;
+            const repeat = parseInt(document.getElementById('tts-repeat').value) || 1;
+            const delay = parseInt(document.getElementById('tts-delay').value) || 0;
+            
+            if (!target.guildId || (target.mode === 'single' && !target.voiceChannelId)) {
+                addDeploymentStatus('❌ Please select a target server and channel', 'error');
+                return;
+            }
+            
+            addDeploymentStatus(`🔊 Deploying TTS warning: ${warningType}...`, 'info');
+            
+            socket.emit('execute-voice-command', {
+                command: 'ttswarning',
+                options: { 
+                    warning_type: warningType,
+                    repeat: repeat,
+                    delay: delay,
+                    all_channels: target.mode === 'multi'
+                },
+                guildId: target.guildId,
+                voiceChannelId: target.voiceChannelId
+            });
+        }
+
+        function deployGhostProtocol() {
+            const target = getSelectedTarget();
+            const ghostType = document.getElementById('ghost-type').value;
+            const customMessage = document.getElementById('ghost-message').value;
+            
+            if (!target.guildId || (target.mode === 'single' && !target.voiceChannelId)) {
+                addDeploymentStatus('❌ Please select a target server and channel', 'error');
+                return;
+            }
+            
+            addDeploymentStatus(`👻 Deploying ghost protocol: ${ghostType}...`, 'info');
+            
+            const options = { ghost_type: ghostType };
+            if (customMessage) {
+                options.target_message = customMessage;
+            }
+            if (target.mode === 'multi') {
+                options.multi_channel = true;
+            }
+            
+            socket.emit('execute-voice-command', {
+                command: 'ghostprotocol',
+                options: options,
+                guildId: target.guildId,
+                voiceChannelId: target.voiceChannelId
+            });
+        }
+
+        function deployVoiceSuppression() {
+            const target = getSelectedTarget();
+            const suppressionType = document.getElementById('suppression-type').value;
+            
+            if (!target.guildId || (target.mode === 'single' && !target.voiceChannelId)) {
+                addDeploymentStatus('❌ Please select a target server and channel', 'error');
+                return;
+            }
+            
+            addDeploymentStatus(`🔇 Deploying voice suppression: ${suppressionType}...`, 'info');
+            
+            socket.emit('execute-voice-command', {
+                command: 'voicesuppression',
+                options: { 
+                    suppression_type: suppressionType,
+                    all_channels: target.mode === 'multi'
+                },
+                guildId: target.guildId,
+                voiceChannelId: target.voiceChannelId
+            });
+        }
+
+        function deployVoiceSiege() {
+            const target = getSelectedTarget();
+            const strategy = document.getElementById('siege-strategy').value;
+            
+            if (!target.guildId) {
+                addDeploymentStatus('❌ Please select a target server', 'error');
+                return;
+            }
+            
+            addDeploymentStatus(`💥 Launching voice siege: ${strategy}...`, 'info');
+            
+            socket.emit('execute-voice-command', {
+                command: 'voicesiege',
+                options: { strategy: strategy },
+                guildId: target.guildId,
+                voiceChannelId: null // Siege targets all channels
+            });
+        }
+
+        function deployVoiceBomb() {
+            const target = getSelectedTarget();
+            const intensity = document.getElementById('bomb-intensity').value;
+            const duration = parseInt(document.getElementById('bomb-duration').value) || 60;
+            
+            if (!target.guildId || (target.mode === 'single' && !target.voiceChannelId)) {
+                addDeploymentStatus('❌ Please select a target server and channel', 'error');
+                return;
+            }
+            
+            addDeploymentStatus(`💣 Deploying voice bomb: ${intensity} intensity...`, 'info');
+            
+            socket.emit('execute-voice-command', {
+                command: 'voicebomb',
+                options: { 
+                    intensity: intensity,
+                    duration: duration
+                },
+                guildId: target.guildId,
+                voiceChannelId: target.voiceChannelId
+            });
+        }
+
+        function addDeploymentStatus(message, type) {
+            const statusContainer = document.getElementById('deployment-status');
+            const statusEl = document.createElement('div');
+            
+            let bgColor, textColor, icon;
+            
+            switch (type) {
+                case 'success':
+                    bgColor = 'bg-green-50';
+                    textColor = 'text-green-800';
+                    icon = '✅';
+                    break;
+                case 'error':
+                    bgColor = 'bg-red-50';
+                    textColor = 'text-red-800';
+                    icon = '❌';
+                    break;
+                case 'info':
+                    bgColor = 'bg-blue-50';
+                    textColor = 'text-blue-800';
+                    icon = 'ℹ️';
+                    break;
+                default:
+                    bgColor = 'bg-gray-50';
+                    textColor = 'text-gray-800';
+                    icon = '💬';
+            }
+            
+            statusEl.className = `p-3 rounded-lg ${bgColor} border`;
+            statusEl.innerHTML = `
+                <div class="flex items-center space-x-2">
+                    <span>${icon}</span>
+                    <span class="${textColor} text-sm">${message}</span>
+                    <span class="text-xs text-gray-500 ml-auto">${new Date().toLocaleTimeString()}</span>
+                </div>
+            `;
+            
+            statusContainer.insertBefore(statusEl, statusContainer.firstChild);
+            
+            // Remove old status messages (keep last 10)
+            const statuses = statusContainer.querySelectorAll('div');
+            if (statuses.length > 10) {
+                statusContainer.removeChild(statuses[statuses.length - 1]);
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            connectWebSocket();
+        });
+    </script>
+</body>
+</html>

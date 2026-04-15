@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .card-shadow {
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .status-online { color: #10b981; }
+        .status-offline { color: #ef4444; }
+        .status-idle { color: #f59e0b; }
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-gray-900 text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <h1 class="text-xl font-bold flex items-center">
+                            <i class="fas fa-robot mr-2"></i>
+                            R3D Bot Control Panel
+                        </h1>
+                    </div>
+                    <div class="ml-6 flex space-x-4">
+                        <a href="/" class="px-3 py-2 rounded-md text-sm font-medium bg-gray-800">Dashboard</a>
+                        <a href="/voice-warfare" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Voice Warfare</a>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <div id="connection-status" class="flex items-center">
+                        <span class="w-2 h-2 rounded-full bg-green-500 mr-2"></span>
+                        <span class="text-sm">Connected</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <!-- Bot Status Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-circle text-2xl" id="bot-status-icon"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-lg font-medium text-gray-900">Bot Status</h3>
+                        <p class="text-sm text-gray-500" id="bot-status-text">Checking...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-server text-2xl text-blue-500"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-lg font-medium text-gray-900">Servers</h3>
+                        <p class="text-2xl font-bold text-gray-900" id="server-count">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-users text-2xl text-green-500"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-lg font-medium text-gray-900">Users</h3>
+                        <p class="text-2xl font-bold text-gray-900" id="user-count">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-clock text-2xl text-purple-500"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-lg font-medium text-gray-900">Uptime</h3>
+                        <p class="text-sm text-gray-900" id="uptime">0h 0m</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Live Activity Feed -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-lg shadow-md">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h3 class="text-lg font-medium text-gray-900 flex items-center">
+                            <i class="fas fa-stream mr-2 text-blue-500"></i>
+                            Live Activity Feed
+                        </h3>
+                    </div>
+                    <div class="p-6">
+                        <div id="activity-feed" class="space-y-3 max-h-96 overflow-y-auto">
+                            <div class="text-gray-500 text-center py-8">
+                                <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                                <p>Connecting to bot...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="space-y-6">
+                <div class="bg-white rounded-lg shadow-md">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h3 class="text-lg font-medium text-gray-900 flex items-center">
+                            <i class="fas fa-bolt mr-2 text-yellow-500"></i>
+                            Quick Actions
+                        </h3>
+                    </div>
+                    <div class="p-6 space-y-3">
+                        <button onclick="sendQuickCommand('ping')" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md transition duration-200">
+                            <i class="fas fa-ping-pong mr-2"></i>Test Bot
+                        </button>
+                        <button onclick="sendQuickCommand('serverinfo')" class="w-full bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-md transition duration-200">
+                            <i class="fas fa-info-circle mr-2"></i>Server Info
+                        </button>
+                        <a href="/voice-warfare" class="w-full bg-purple-500 hover:bg-purple-600 text-white font-medium py-2 px-4 rounded-md transition duration-200 block text-center">
+                            <i class="fas fa-volume-up mr-2"></i>Voice Warfare
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Metrics Overview -->
+                <div class="bg-white rounded-lg shadow-md">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h3 class="text-lg font-medium text-gray-900 flex items-center">
+                            <i class="fas fa-chart-bar mr-2 text-green-500"></i>
+                            Command Statistics
+                        </h3>
+                    </div>
+                    <div class="p-6">
+                        <div id="metrics-overview">
+                            <div class="text-gray-500 text-center">
+                                <i class="fas fa-spinner fa-spin text-xl mb-2"></i>
+                                <p>Loading metrics...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Voice Warfare Stats -->
+        <div class="mt-8">
+            <div class="bg-white rounded-lg shadow-md">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900 flex items-center">
+                        <i class="fas fa-volume-up mr-2 text-red-500"></i>
+                        Voice Warfare Statistics
+                    </h3>
+                </div>
+                <div class="p-6">
+                    <div id="voice-stats" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-gray-900" id="voice-deployments">0</div>
+                            <div class="text-sm text-gray-500">Total Deployments</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-gray-900" id="voice-users">0</div>
+                            <div class="text-sm text-gray-500">Users Affected</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-gray-900" id="voice-success">0%</div>
+                            <div class="text-sm text-gray-500">Success Rate</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-gray-900" id="voice-duration">0s</div>
+                            <div class="text-sm text-gray-500">Avg Duration</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let socket;
+        let activityFeed = document.getElementById('activity-feed');
+        let messageCount = 0;
+        const maxMessages = 50;
+
+        function connectWebSocket() {
+            socket = io();
+
+            socket.on('connect', () => {
+                updateConnectionStatus(true);
+                addActivityMessage('🟢 Connected to bot', 'system');
+            });
+
+            socket.on('disconnect', () => {
+                updateConnectionStatus(false);
+                addActivityMessage('🔴 Disconnected from bot', 'system');
+            });
+
+            socket.on('bot-status', (status) => {
+                updateBotStatus(status);
+            });
+
+            socket.on('metrics-update', (metrics) => {
+                updateMetrics(metrics);
+            });
+
+            socket.on('voice-metrics-update', (voiceMetrics) => {
+                updateVoiceMetrics(voiceMetrics);
+            });
+
+            socket.on('message-create', (message) => {
+                addActivityMessage(`💬 ${message.author.username}: ${message.content}`, 'message');
+            });
+
+            socket.on('voice-state-update', (voiceUpdate) => {
+                if (voiceUpdate.newChannel) {
+                    addActivityMessage(`🎤 ${voiceUpdate.username} joined ${voiceUpdate.newChannel.name}`, 'voice');
+                } else if (voiceUpdate.oldChannel) {
+                    addActivityMessage(`🔇 ${voiceUpdate.username} left ${voiceUpdate.oldChannel.name}`, 'voice');
+                }
+            });
+
+            socket.on('command-result', (result) => {
+                if (result.success) {
+                    addActivityMessage(`✅ Command executed: ${result.command}`, 'success');
+                } else {
+                    addActivityMessage(`❌ Command failed: ${result.error}`, 'error');
+                }
+            });
+        }
+
+        function updateConnectionStatus(connected) {
+            const statusEl = document.getElementById('connection-status');
+            const dot = statusEl.querySelector('span');
+            const text = statusEl.querySelector('span:last-child');
+            
+            if (connected) {
+                dot.className = 'w-2 h-2 rounded-full bg-green-500 mr-2';
+                text.textContent = 'Connected';
+            } else {
+                dot.className = 'w-2 h-2 rounded-full bg-red-500 mr-2';
+                text.textContent = 'Disconnected';
+            }
+        }
+
+        function updateBotStatus(status) {
+            const icon = document.getElementById('bot-status-icon');
+            const text = document.getElementById('bot-status-text');
+            
+            if (status.ready) {
+                icon.className = 'fas fa-circle text-2xl status-online pulse';
+                text.textContent = 'Online';
+            } else {
+                icon.className = 'fas fa-circle text-2xl status-offline';
+                text.textContent = 'Offline';
+            }
+
+            document.getElementById('server-count').textContent = status.guilds;
+            document.getElementById('user-count').textContent = status.users;
+            document.getElementById('uptime').textContent = formatUptime(status.uptime);
+        }
+
+        function updateMetrics(metrics) {
+            const overview = document.getElementById('metrics-overview');
+            overview.innerHTML = `
+                <div class="space-y-2">
+                    <div class="flex justify-between">
+                        <span class="text-sm text-gray-600">Total Commands:</span>
+                        <span class="font-medium">${metrics.commands.total}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-sm text-gray-600">Errors:</span>
+                        <span class="font-medium text-red-600">${metrics.errors.total}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-sm text-gray-600">Cooldowns:</span>
+                        <span class="font-medium text-yellow-600">${metrics.cooldowns.total}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-sm text-gray-600">API Calls:</span>
+                        <span class="font-medium">${metrics.api.total}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function updateVoiceMetrics(voiceMetrics) {
+            document.getElementById('voice-deployments').textContent = voiceMetrics.totalDeployments;
+            document.getElementById('voice-users').textContent = voiceMetrics.uniqueUsersAffected;
+            document.getElementById('voice-success').textContent = voiceMetrics.successRate + '%';
+            document.getElementById('voice-duration').textContent = voiceMetrics.durationStats.average + 's';
+        }
+
+        function addActivityMessage(message, type) {
+            const feed = document.getElementById('activity-feed');
+            const messageEl = document.createElement('div');
+            
+            let icon = '💬';
+            let bgColor = 'bg-gray-50';
+            let textColor = 'text-gray-800';
+            
+            switch (type) {
+                case 'system':
+                    icon = '🔧';
+                    bgColor = 'bg-blue-50';
+                    textColor = 'text-blue-800';
+                    break;
+                case 'voice':
+                    icon = '🎤';
+                    bgColor = 'bg-purple-50';
+                    textColor = 'text-purple-800';
+                    break;
+                case 'success':
+                    icon = '✅';
+                    bgColor = 'bg-green-50';
+                    textColor = 'text-green-800';
+                    break;
+                case 'error':
+                    icon = '❌';
+                    bgColor = 'bg-red-50';
+                    textColor = 'text-red-800';
+                    break;
+            }
+            
+            messageEl.className = `p-3 rounded-lg ${bgColor} border`;
+            messageEl.innerHTML = `
+                <div class="flex items-center space-x-2">
+                    <span>${icon}</span>
+                    <span class="${textColor} text-sm">${message}</span>
+                    <span class="text-xs text-gray-500 ml-auto">${new Date().toLocaleTimeString()}</span>
+                </div>
+            `;
+            
+            feed.insertBefore(messageEl, feed.firstChild);
+            messageCount++;
+            
+            // Remove old messages
+            if (messageCount > maxMessages) {
+                feed.removeChild(feed.lastChild);
+                messageCount--;
+            }
+        }
+
+        function sendQuickCommand(command) {
+            if (socket && socket.connected) {
+                socket.emit('execute-command', {
+                    command: command,
+                    options: {}
+                });
+            } else {
+                addActivityMessage('❌ Not connected to bot', 'error');
+            }
+        }
+
+        function formatUptime(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            return `${hours}h ${minutes}m`;
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            connectWebSocket();
+        });
+    </script>
+</body>
+</html>

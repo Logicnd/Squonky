@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>R3D — Dangerous Auth Embed Preview</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #313338;
+    font-family: "gg sans", "Noto Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    color: #dbdee1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 40px;
+    padding: 40px 20px;
+    min-height: 100vh;
+  }
+
+  h2 {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #949ba4;
+    align-self: flex-start;
+    max-width: 520px;
+    width: 100%;
+    margin-bottom: -30px;
+  }
+
+  .message {
+    display: flex;
+    gap: 16px;
+    width: 100%;
+    max-width: 520px;
+  }
+
+  .avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #CC2222, #880000);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 900;
+    color: #fff;
+  }
+
+  .msg-body { flex: 1; min-width: 0; }
+  .msg-header { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
+  .msg-author { font-size: 15px; font-weight: 600; color: #f2f3f5; }
+  .msg-bot-tag {
+    background: #5865F2;
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 4px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .msg-time { font-size: 11px; color: #949ba4; }
+
+  /* Embed */
+  .embed {
+    border-left: 4px solid #FF2222;
+    background: #2b2d31;
+    border-radius: 0 4px 4px 0;
+    padding: 12px 16px 16px;
+    margin-top: 4px;
+    max-width: 460px;
+    width: 100%;
+  }
+  .embed.green  { border-left-color: #00CC66; }
+  .embed.black  { border-left-color: #111111; }
+  .embed.grey   { border-left-color: #555555; }
+  .embed.orange { border-left-color: #FF6600; }
+
+  .embed-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #f2f3f5;
+    margin-bottom: 8px;
+  }
+  .embed-desc {
+    font-size: 13.5px;
+    color: #dbdee1;
+    line-height: 1.5;
+    margin-bottom: 12px;
+  }
+  .embed-desc code {
+    background: #1e1f22;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: "Consolas", monospace;
+    font-size: 12.5px;
+  }
+
+  .embed-fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .embed-field.full { grid-column: 1 / -1; }
+  .embed-field-name {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #f2f3f5;
+    margin-bottom: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .embed-field-value {
+    font-size: 13px;
+    color: #dbdee1;
+    line-height: 1.4;
+  }
+  .embed-field-value code {
+    background: #1e1f22;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: "Consolas", monospace;
+    font-size: 12px;
+  }
+  .mention {
+    background: rgba(88, 101, 242, 0.2);
+    color: #c9cdfb;
+    padding: 0 2px;
+    border-radius: 3px;
+    font-size: 13px;
+  }
+
+  .embed-footer {
+    font-size: 11px;
+    color: #949ba4;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #3f4147;
+  }
+  .embed-footer-dot { font-size: 8px; }
+
+  /* Buttons */
+  .btn-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: filter 0.12s;
+    user-select: none;
+  }
+  .btn:hover { filter: brightness(0.85); }
+  .btn-danger  { background: #DA373C; color: #fff; }
+  .btn-secondary { background: #4e505880; color: #dbdee1; border: 1px solid #4e5058; }
+  .btn-abort { background: #DA373C; color: #fff; }
+
+  .label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #949ba4;
+    margin-bottom: 8px;
+    margin-top: 4px;
+  }
+</style>
+</head>
+<body>
+
+<!-- STEP 1: Confirmation -->
+<h2>Step 1 — Dangerous command triggered</h2>
+<div class="message">
+  <div class="avatar">R</div>
+  <div class="msg-body">
+    <div class="msg-header">
+      <span class="msg-author">R3D</span>
+      <span class="msg-bot-tag">Bot</span>
+      <span class="msg-time">Today at 7:55 PM</span>
+    </div>
+    <div class="embed">
+      <div class="embed-title">DANGEROUS COMMAND: <code>NUKE</code></div>
+      <div class="embed-desc">This operation is <strong>high-impact and irreversible</strong>.<br>Review the details below before confirming.</div>
+      <div class="embed-fields">
+        <div class="embed-field">
+          <div class="embed-field-name">Requested by</div>
+          <div class="embed-field-value"><span class="mention">@Squonky</span></div>
+        </div>
+        <div class="embed-field">
+          <div class="embed-field-name">Command</div>
+          <div class="embed-field-value"><code>nuke</code></div>
+        </div>
+        <div class="embed-field full">
+          <div class="embed-field-name">Warning</div>
+          <div class="embed-field-value">This action <strong>cannot be undone</strong>. Confirm only if you are certain.</div>
+        </div>
+      </div>
+      <div class="embed-footer">
+        R3D Security System
+        <span class="embed-footer-dot">•</span>
+        Authorization required
+        <span class="embed-footer-dot">•</span>
+        Today at 7:55 PM
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-danger">⚡ Execute</button>
+      <button class="btn btn-secondary">✖ Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- STEP 2a: Executing -->
+<h2>Step 2a — User clicked Execute</h2>
+<div class="message">
+  <div class="avatar">R</div>
+  <div class="msg-body">
+    <div class="msg-header">
+      <span class="msg-author">R3D</span>
+      <span class="msg-bot-tag">Bot</span>
+      <span class="msg-time">Today at 7:55 PM</span>
+    </div>
+    <div class="embed black">
+      <div class="embed-title">Executing...</div>
+      <div class="embed-desc"><code>NUKE</code> is now running.</div>
+      <div class="embed-footer">
+        R3D Security System
+        <span class="embed-footer-dot">•</span>
+        Today at 7:55 PM
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- STEP 2b: Cancelled -->
+<h2>Step 2b — User clicked Cancel</h2>
+<div class="message">
+  <div class="avatar">R</div>
+  <div class="msg-body">
+    <div class="msg-header">
+      <span class="msg-author">R3D</span>
+      <span class="msg-bot-tag">Bot</span>
+      <span class="msg-time">Today at 7:55 PM</span>
+    </div>
+    <div class="embed green">
+      <div class="embed-title">Cancelled</div>
+      <div class="embed-desc">Operation was cancelled. No changes were made.</div>
+      <div class="embed-footer">
+        R3D Security System
+        <span class="embed-footer-dot">•</span>
+        Today at 7:55 PM
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- STEP 2c: Timeout -->
+<h2>Step 2c — No response within 30s</h2>
+<div class="message">
+  <div class="avatar">R</div>
+  <div class="msg-body">
+    <div class="msg-header">
+      <span class="msg-author">R3D</span>
+      <span class="msg-bot-tag">Bot</span>
+      <span class="msg-time">Today at 7:55 PM</span>
+    </div>
+    <div class="embed grey">
+      <div class="embed-title">Timed Out</div>
+      <div class="embed-desc">No response received within 30 seconds. Operation cancelled.</div>
+      <div class="embed-footer">
+        R3D Security System
+        <span class="embed-footer-dot">•</span>
+        Today at 7:55 PM
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Access Denied -->
+<h2>Bonus — Unauthorized user</h2>
+<div class="message">
+  <div class="avatar">R</div>
+  <div class="msg-body">
+    <div class="msg-header">
+      <span class="msg-author">R3D</span>
+      <span class="msg-bot-tag">Bot</span>
+      <span class="msg-time">Today at 7:55 PM</span>
+    </div>
+    <div class="embed orange">
+      <div class="embed-title">Access Denied</div>
+      <div class="embed-desc">You are not authorized to run this command.</div>
+      <div class="embed-footer">
+        R3D Security System
+        <span class="embed-footer-dot">•</span>
+        Today at 7:55 PM
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

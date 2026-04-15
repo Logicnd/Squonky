@@ -1,0 +1,47 @@
+{
+  "name": "r3d-discord-bot",
+  "version": "2.0.0",
+  "description": "R3D modular Discord bot with optional dashboard",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "start:dashboard": "node server.js",
+    "dev:dashboard": "nodemon server.js",
+    "test": "node scripts/checkSyntax.js"
+  },
+  "dependencies": {
+    "@discordjs/voice": "^0.19.0",
+    "chalk": "^4.1.2",
+    "compression": "^1.8.1",
+    "cors": "^2.8.6",
+    "discord.js": "^14.25.1",
+    "dotenv": "^17.2.4",
+    "express": "^5.2.1",
+    "ffmpeg-static": "^5.3.0",
+    "gradient-string": "^3.0.0",
+    "helmet": "^8.1.0",
+    "ioredis": "^5.9.2",
+    "libsodium-wrappers": "^0.8.2",
+    "morgan": "^1.10.1",
+    "node-cron": "^4.2.1",
+    "socket.io": "^4.8.3",
+    "undici": "^6.21.3",
+    "winston": "^3.19.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "keywords": [
+    "discord",
+    "bot",
+    "modular",
+    "dashboard"
+  ],
+  "author": "R3D",
+  "license": "MIT"
+}
