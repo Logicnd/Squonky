@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
+    "build": "npm install",
     "start:dashboard": "node server.js",
     "dev:dashboard": "nodemon server.js",
     "test": "node scripts/checkSyntax.js"
@@ -25,15 +26,14 @@
     "libsodium-wrappers": "^0.8.2",
     "morgan": "^1.10.1",
     "node-cron": "^4.2.1",
+    "nodemon": "^3.1.11",
     "socket.io": "^4.8.3",
     "undici": "^6.21.3",
     "winston": "^3.19.0"
   },
-  "devDependencies": {
-    "nodemon": "^3.1.11"
-  },
+  "devDependencies": {},
   "engines": {
-    "node": ">=18.0.0",
+    "node": ">=22.22.0",
     "npm": ">=9.0.0"
   },
   "keywords": [
